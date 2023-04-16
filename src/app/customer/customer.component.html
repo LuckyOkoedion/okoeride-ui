@@ -1,0 +1,67 @@
+<app-toolbar [title]="title" [currentUser]="currentUser"></app-toolbar>
+
+<div class="container" style="padding-top: 30px">
+  <div class="row">
+    <div class="col-md-6" *ngIf="!showDriverCard">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>
+            Request a Ride
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <form (ngSubmit)="onRequestRide()">
+            <mat-form-field>
+              <input matInput placeholder="Destination" [(ngModel)]="destination" name="destination" required>
+            </mat-form-field>
+            <mat-form-field>
+              <input matInput placeholder="X" [(ngModel)]="x" name="x" required>
+            </mat-form-field>
+            <mat-form-field>
+              <input matInput placeholder="Y" [(ngModel)]="y" name="y" required>
+            </mat-form-field>
+            <button mat-raised-button color="primary" type="submit" style="margin-left: 10px;">Request Ride</button>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
+    <div class="col-md-6">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>
+            Your Location Coordinate
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <form (ngSubmit)="onProvideLocation()">
+            <mat-form-field>
+              <input matInput placeholder="X" [(ngModel)]="locationX" name="locationX" required>
+            </mat-form-field>
+            <mat-form-field>
+              <input matInput placeholder="Y" [(ngModel)]="locationY" name="locationY" required>
+            </mat-form-field>
+            <button mat-raised-button color="primary" type="submit">Confirm</button>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+  <div class="row" *ngIf="showDriverCard" style="padding-top: 30px">
+    <div class="col-md-12">
+      <mat-card>
+        <mat-card-header>
+          <mat-icon mat-card-avatar>account_circle</mat-icon>
+          <mat-card-title>
+           Matched Driver Info
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="driver-info">
+            <div class="driver-name">{{ driverName }}</div>
+            <div class="driver-location">Location: {{ driverXLocation }}, {{ driverYLocation }}</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>
