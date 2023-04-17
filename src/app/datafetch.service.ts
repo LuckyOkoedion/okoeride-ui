@@ -1,13 +1,19 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { ICustomer } from './customer/customer-interface';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { ICustomer } from './customer-interface';
 import { IDriver } from './driver/driver-interface';
+import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DatafetchService {
+  
+
+  private matchedSocket$: WebSocketSubject<any>;
+  private matchedData$: BehaviorSubject<any[]> = new BehaviorSubject<any[]>([]);
+  private driverId: number;
   
   private currentUser: any;
   private apiUrl = 'http://localhost:8080';
@@ -17,6 +23,31 @@ export class DatafetchService {
   drivers: IDriver[];
 
   constructor(private http: HttpClient) { }
+
+  connectToMatchedSocket(driverId: number) {
+    this.driverId = driverId;
+    this.matchedSocket$ = webSocket(`ws://${this.apiUrl}/matched`);
+    this.matchedSocket$.subscribe(
+      {
+        next: (message) => {
+          if (message.driverId === this.driverId) {
+            const newData = [...this.matchedData$.getValue(), message];
+            this.matchedData$.next(newData);
+          }
+        },
+        error: (error) => console.error(error),
+        complete: () => console.warn('Matched WebSocket connection closed') ,
+      });
+  }
+
+  getDataMatchedSocketData(): Observable<any[]> {
+    return this.matchedData$.asObservable();
+  }
+
+  acceptRide(payload: ICustomer) {
+   return this.http.post(`${this.apiUrl}/driver/accept-ride`, payload);
+  }
+
 
   async getCustomer(userId: number) {
 
@@ -67,6 +98,12 @@ export class DatafetchService {
 
 
   async requestRide(id: any, destination: any, payload: { x: any; y: any; driverId: null; customerId: any; }) {
+    const all = {
+      id,
+      destination,
+      payload
+    }
+    console.log(JSON.stringify(all));
     await this.http.post(`${this.apiUrl}/customer/request/${payload.customerId}/${destination}`, payload).subscribe({
       next: (val) => {
         console.log(val);
@@ -162,6 +199,8 @@ export class DatafetchService {
   }
 
   onboardDriver(theName: string) {
+
+    console.log(theName);
 
     const url = 'http://localhost:8080/admin/onboard-driver';
     const data = { name: theName };

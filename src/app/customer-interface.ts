@@ -3,7 +3,7 @@ export interface ICustomer {
       name: string;
       locationX: number;
       locationY: number;
-      rideId: number;
-      driverId: number;
+      rideId?: number;
+      driverId?: number;
 }
 

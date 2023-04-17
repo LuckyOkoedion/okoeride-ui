@@ -29,6 +29,10 @@ export class AdminComponent implements OnInit {
   }
 
   onSubmit(): void {
+
+    
+
+
     this.isLoading = true;
     this.progress = 0;
     this.showSuccess = false;
@@ -45,6 +49,7 @@ export class AdminComponent implements OnInit {
           this.progress = 100;
           this.showSuccess = true;
           this.showFailure = false;
+
         },
         error: (err: any) => {
           console.log(err);

@@ -4,9 +4,16 @@
     <h2>Admin Dashboard</h2>
   
     <div *ngIf="showSuccess" class="alert alert-success">
+      <button type="button" class="close" aria-label="Close" (click)="showSuccess=false">
+        <span aria-hidden="true">&times;</span>
+      </button>
       Driver onboarded successfully.
     </div>
+    
     <div *ngIf="showFailure" class="alert alert-danger">
+      <button type="button" class="close" aria-label="Close" (click)="showFailure=false">
+        <span aria-hidden="true">&times;</span>
+      </button>
       Driver onboarding failed.
     </div>
   

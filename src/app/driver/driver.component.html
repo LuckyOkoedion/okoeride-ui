@@ -20,32 +20,33 @@
       <div *ngIf="matchedRequests.length > 0">
         <h4 style="color: #070A52; font-weight: bold; font-size: 16px; text-decoration: underline;">Matched Requests</h4>
         <div *ngFor="let request of matchedRequests">
-          <div *ngIf="request.driverId === currentUser.id" class="card mb-2" (click)="selectRequest(request)">
+          <div class="card mb-2" (click)="acceptRide(request)" style="cursor: pointer;">
             <div class="card-body">
               <div class="media">
                 <i class="person-circle"></i>
                 <div class="media-body">
-                  <h5 class="mt-0">{{request.destination}}</h5>
-                  <p>Customer Location: {{request.locationX}}, {{request.locationY}}</p>
+                  <h5 class="mt-0">{{request.name}}</h5>
+                  <p>Pick Up Location: {{request.locationX}}, {{request.locationY}}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      <div *ngIf="!selectedRequest && matchedRequests.length == 0" style="padding-left: 30px; margin-top: 30px; font-weight: bold; font-size: 16px;"> No Matched Customers At the Moment</div>
       <div *ngIf="selectedRequest">
         <h4 style="color: #070A52; font-weight: bold; font-size: 16px; text-decoration: underline;">Accepted Ride</h4>
         <div class="card mb-2">
-          <div class="card-body">
+          <div class="card-body" style="width: 50%; margin: 0 auto;">
             <div class="media">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
                 <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
                 <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
               </svg>
               <div class="media-body">
-                <h5 class="mt-0">{{selectedRequest.destination}}</h5>
-                <p>Customer Location: {{selectedRequest.locationX}}, {{selectedRequest.locationY}}</p>
-                <button type="button" class="btn btn-primary" (click)="acceptRide(selectedRequest)">Accept Ride</button>
+                <h5 class="mt-0">{{selectedRequest.name}}</h5>
+                <p>Pick Up Location: {{selectedRequest.locationX}}, {{selectedRequest.locationY}}</p>
+                <button type="button" class="btn btn-primary" (click)="contactCustomer(selectedRequest)">Contact Customer</button>
               </div>
             </div>
           </div>
