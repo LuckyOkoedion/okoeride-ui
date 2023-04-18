@@ -6,6 +6,13 @@ import { WebSocketSubject } from 'rxjs/webSocket';
 import { DatafetchService } from '../datafetch.service';
 import { Title } from '@angular/platform-browser';
 import { ILocation } from '../location-interface';
+import { RxStompService } from '../rx-stomp.service';
+import { IMessage } from '@stomp/rx-stomp';
+import { ICustomer } from '../customer-interface';
+import { IRide } from '../ride-interface';
+import { concatMap, switchMap } from 'rxjs';
+import { MatSelectChange } from '@angular/material/select';
+
 
 
 @Component({
@@ -15,10 +22,17 @@ import { ILocation } from '../location-interface';
 })
 export class CustomerComponent implements OnInit {
   title = "The Ride"
-  currentUser = {
+  currentUser: ICustomer = {
     id: 2, // hard-coded for now, but can be passed in from auth service
     name: 'Franca Okpe',
+    locationX: 10, 
+    locationY: 20
   };
+
+  selectPlaceholder = "Switch User";
+
+  allCustomers: ICustomer[];
+  newUserName;
   
   rideRequestSubmitted = false;
   driverXLocation: number;
@@ -34,6 +48,7 @@ export class CustomerComponent implements OnInit {
   selectedRequest = {destination: "", locationY: 0};
   driverAvatar = "";
 
+
   private acceptedSocket$!: WebSocketSubject<any>;
   private locationSocket$!: WebSocketSubject<any>;
 
@@ -42,32 +57,69 @@ export class CustomerComponent implements OnInit {
     private formBuilder: FormBuilder,
     private route: ActivatedRoute,
     private location: Location,
-    private titleService: Title
+    private titleService: Title,
+    private rxStompService: RxStompService
   ) {}
 
   async ngOnInit() {
+
+
     this.titleService.setTitle('TheRide - Customer: ' + this.currentUser.name.split(' ')[0]);
     const userId = +this.route.snapshot.paramMap.get('id');
    // this.currentUser = await this.dataFetchService.getCustomer(userId);
 
+   this.dataFetchService.fetchCustomers$();
+   this.dataFetchService.getCustomers()
+   .subscribe({
+     next: (valu) => {
+       this.allCustomers = valu;
+       const randomIndex = Math.floor(Math.random() * this.allCustomers.length);
+       this.currentUser = this.allCustomers[randomIndex];
+     }
+   });
 
-    this.locationSocket$ = new WebSocketSubject<any>('ws://localhost:8080/location');
 
-    this.acceptedSocket$ = new WebSocketSubject<any>('ws://localhost:8080/accepted');
-    this.acceptedSocket$.subscribe(
 
+      this.rxStompService.watch('/topic/accepted').subscribe((data: IMessage) => {
+        console.log(`Data from ws: ${data.body}`);
+
+        const payload: IRide = JSON.parse(data.body);
+  
+        if (payload.customerId === this.currentUser.id && payload.driverAccepted) {
+          this.acceptedRide = data;
+          this.showDriverCard = true;
+        }
+          
+        });
+
+  }
+
+  switchUser(valu: MatSelectChange) {
+
+    this.currentUser = valu.value;
+
+    setTimeout(() => {
+      valu.source.value = this.selectPlaceholder;
+    }, 0);
+    
+    
+  }
+
+  createUser() {
+    this.dataFetchService.createCustomer(this.newUserName)
+    .pipe(
+      concatMap(async () => this.dataFetchService.fetchCustomers$()),
+      switchMap(() => this.dataFetchService.getCustomers())
+    ).subscribe(
       {
-        next: (data) => {
-          if (data.customerId === this.currentUser.id && data.driverAccepted) {
-            this.acceptedRide = data;
-            this.showDriverCard = true;
-          }
-        },
-        error: (error) => console.error(error),
-        complete: () => console.warn('Websocket Accept endpoint flow Completed!')
+        next: (value) => {
+
+          this.allCustomers = value;
+          this.newUserName = "Create User";
+
+        }
       }
-      
-    );
+    )
   }
 
  
@@ -97,8 +149,7 @@ export class CustomerComponent implements OnInit {
 
     console.log(JSON.stringify(payload));
 
-    
-    this.locationSocket$.next(payload);
+    this.rxStompService.publish({ destination: '/app/location', body: JSON.stringify(payload) });
 
 
   }

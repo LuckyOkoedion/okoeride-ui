@@ -1,36 +1,55 @@
 <app-toolbar [title]="title" [currentUser]="currentUser"></app-toolbar>
 
 <div class="container mt-3">
-    <h2>Admin Dashboard</h2>
-  
-    <div *ngIf="showSuccess" class="alert alert-success">
-      <button type="button" class="close" aria-label="Close" (click)="showSuccess=false">
-        <span aria-hidden="true">&times;</span>
-      </button>
-      Driver onboarded successfully.
-    </div>
-    
-    <div *ngIf="showFailure" class="alert alert-danger">
-      <button type="button" class="close" aria-label="Close" (click)="showFailure=false">
-        <span aria-hidden="true">&times;</span>
-      </button>
-      Driver onboarding failed.
-    </div>
-  
-    <h4>Onboard Driver</h4>
-  
-    <form (ngSubmit)="onSubmit()" #onboardDriverForm="ngForm">
-      <div class="form-group">
-        <label for="name">Driver Name:</label>
-        <input type="text" class="form-control w-25" id="name" name="name" [(ngModel)]="driverName" required>
+  <div class="row">
+    <div class="col-md-6">
+      <h2>Onboard Driver</h2>
+
+      <form (ngSubmit)="onSubmit()" #onboardDriverForm="ngForm">
+        <div class="form-group">
+          <label for="name">Driver Name:</label>
+          <input type="text" class="form-control w-25" id="name" name="name" [(ngModel)]="driverName" required>
+        </div>
+        <button type="submit" class="btn btn-primary" [disabled]="isLoading" style="margin-top: 10px;">Submit</button>
+      </form>
+
+      <div *ngIf="isLoading" class="mt-3">
+        <div class="progress">
+          <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" [style.width.%]="progress" [attr.aria-valuenow]="progress" aria-valuemin="0" aria-valuemax="100">{{progress}}%</div>
+        </div>
       </div>
-      <button type="submit" class="btn btn-primary" [disabled]="isLoading" style="margin-top: 10px;">Submit</button>
-    </form>
-  
-    <div *ngIf="isLoading" class="mt-3">
-      <div class="progress">
-        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" [style.width.%]="progress" [attr.aria-valuenow]="progress" aria-valuemin="0" aria-valuemax="100">{{progress}}%</div>
+    </div>
+
+    <div class="col-md-6">
+      <h2>Registered Drivers</h2>
+
+      <div class="row">
+        <div class="col-md-6 mb-3" *ngFor="let driver of registeredDrivers">
+          <div class="card">
+            <div class="card-body">
+              <i class="person-circle"></i>
+              {{ driver.name }}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-  
+
+  <div class="row mt-3">
+    <div class="col-md-6">
+      <h2>Registered Customers</h2>
+
+      <div class="row">
+        <div class="col-md-6 mb-3" *ngFor="let customer of registeredCustomers">
+          <div class="card">
+            <div class="card-body">
+              <i class="person-circle"></i>
+              {{ customer.name }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

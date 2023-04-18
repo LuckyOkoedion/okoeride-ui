@@ -3,7 +3,9 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { ICustomer } from './customer-interface';
 import { IDriver } from './driver/driver-interface';
-import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
+import { RxStompService } from './rx-stomp.service';
+import { IMessage } from '@stomp/rx-stomp';
+
 
 @Injectable({
   providedIn: 'root'
@@ -11,8 +13,9 @@ import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
 export class DatafetchService {
   
 
-  private matchedSocket$: WebSocketSubject<any>;
   private matchedData$: BehaviorSubject<any[]> = new BehaviorSubject<any[]>([]);
+  private drivers$: BehaviorSubject<IDriver[]> = new BehaviorSubject<IDriver[]>([]);
+  private customers$: BehaviorSubject<ICustomer[]> = new BehaviorSubject<ICustomer[]>([]);
   private driverId: number;
   
   private currentUser: any;
@@ -20,24 +23,36 @@ export class DatafetchService {
 
   customers: ICustomer[];
 
+
+
   drivers: IDriver[];
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private rxStompService: RxStompService) { 
+
+ 
+  }
 
   connectToMatchedSocket(driverId: number) {
+
     this.driverId = driverId;
-    this.matchedSocket$ = webSocket(`ws://${this.apiUrl}/matched`);
-    this.matchedSocket$.subscribe(
-      {
-        next: (message) => {
-          if (message.driverId === this.driverId) {
-            const newData = [...this.matchedData$.getValue(), message];
-            this.matchedData$.next(newData);
-          }
-        },
-        error: (error) => console.error(error),
-        complete: () => console.warn('Matched WebSocket connection closed') ,
+ 
+    this.rxStompService.watch
+      ({ destination: "/topic/matched" })
+      .subscribe((message: IMessage) => {
+      console.log(`Data from ws: ${message.body}`);
+
+      const payload: ICustomer = JSON.parse(message.body);
+
+      if (payload.driverId === this.driverId) {
+        const newData = [...this.matchedData$.getValue(), message];
+        this.matchedData$.next(newData);
+      }
+        
       });
+
+
+
+
   }
 
   getDataMatchedSocketData(): Observable<any[]> {
@@ -206,6 +221,42 @@ export class DatafetchService {
     const data = { name: theName };
 
     return this.http.post(url, data);
+  }
+
+
+
+  fetchDrivers$() {
+    this.http.get<IDriver[]>("http://localhost:8080/driver")
+    .subscribe({
+      next: (valu) => {
+        console.log("Data from get all drivers: " + JSON.stringify(valu));
+        const newData = [...valu];
+        this.drivers$.next(newData);
+      }
+    });
+
+  }
+
+  fetchCustomers$() {
+    this.http.get<ICustomer[]>("http://localhost:8080/customer")
+    .subscribe({
+      next: (valu) => {
+        console.log("Data from get all customers: " + JSON.stringify(valu));
+        const newData = [...valu];
+        this.customers$.next(newData);
+      }
+    })
+
+  }
+
+
+  getDrivers() {
+    return this.drivers$.asObservable();
+
+  }
+
+  getCustomers() {
+    return this.customers$.asObservable();
   }
   
 }

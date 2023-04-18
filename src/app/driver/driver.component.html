@@ -1,6 +1,13 @@
 <app-toolbar [title]="title" [currentUser]="currentUser"></app-toolbar>
 
 <div class="container" style="padding-top: 30px;">
+  <div class="col-md-6">
+    <mat-form-field>
+      <mat-select [placeholder]="selectPlaceholder" (selectionChange)="switchUser($event)">
+        <mat-option *ngFor="let driver of allDrivers" [value]="driver">{{ driver.name }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
   <div class="row">
     <div class="col-md-4">
       <h4 style="color: #070A52; font-weight: bold; font-size: 16px; text-decoration: underline;">Your Location Coordinate</h4>

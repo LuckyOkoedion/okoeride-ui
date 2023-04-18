@@ -4,6 +4,10 @@ import { HttpClient } from '@angular/common/http';
 import { ICustomer } from '../customer-interface';
 import { Title } from '@angular/platform-browser';
 import { DatafetchService } from '../datafetch.service';
+import { RxStompService } from '../rx-stomp.service';
+import { IDriver } from './driver-interface';
+import { MatSelectChange } from '@angular/material/select';
+
 
 @Component({
   selector: 'app-driver',
@@ -12,7 +16,10 @@ import { DatafetchService } from '../datafetch.service';
 })
 export class DriverComponent implements OnInit {
 
-  title = "The Ride"
+  title = "The Ride";
+  selectPlaceholder = "Switch User";
+  allDrivers: IDriver[];
+
 
   currentUser = {
     id: 1, // hard-coded for now, but can be passed in from auth service
@@ -27,53 +34,58 @@ export class DriverComponent implements OnInit {
     customerId: null,
   };
   matchedRequests: ICustomer[] = [
-    {name: "Harry Smith", locationY: 13, locationX: 12, id: 3, driverId: 1},
-    {name: "John Ukpe", locationY: 25, locationX: 19, id: 11, driverId: 8},
-    {name: "Chukwu Naple", locationY: 18, locationX: 22, id: 11, driverId: 1},
-    {name: "Harry Smith", locationY: 23, locationX: 19, id: 67, driverId: 12},
-    {name: "Harry Smith", locationY: 66, locationX: 45, id: 8, driverId: 1}
+    {name: "Harry Smith", locationY: 13, locationX: 12, id: 3, driverId: 1, rideId: 3},
+    {name: "John Ukpe", locationY: 25, locationX: 19, id: 11, driverId: 8, rideId: 3},
+    {name: "Chukwu Naple", locationY: 18, locationX: 22, id: 11, driverId: 1, rideId: 3},
+    {name: "Harry Smith", locationY: 23, locationX: 19, id: 67, driverId: 12, rideId: 3},
+    {name: "Harry Smith", locationY: 66, locationX: 45, id: 8, driverId: 1, rideId: 3}
   ];
   selectedRide: any = null;
-  locationUrl = 'ws://localhost:8080/location';
-  matchedUrl = 'ws://localhost:8080/matched';
 
   x;
   selectedRequest : ICustomer = {name: "Harry Smith", locationY: 13, locationX: 12, id: 3};
 
-  constructor(private driverService: DatafetchService, private titleService: Title) { }
+  constructor(private driverService: DatafetchService, 
+    private titleService: Title, private rxStompService: RxStompService
+    ) { }
 
   ngOnInit(): void {
+
     this.selectedRequest = null;
     this.titleService.setTitle('TheRide - Driver: ' + this.currentUser.name.split(' ')[0]);
-    // Connect to websocket endpoint for providing location
-    const webSocket = new WebSocketSubject(this.locationUrl);
-    webSocket.subscribe(
 
-      {
-        next: (data) => console.log('Location updated: ', data),
-        error: (err) => console.error(err),
-        complete: () => console.log('Websocket closed')
-      }  
-      
-    );
+    this.driverService.fetchDrivers$();
+    this.driverService.getDrivers()
+    .subscribe({
+      next: (valu) => {
+        this.allDrivers = valu;
+        const randomIndex = Math.floor(Math.random() * this.allDrivers.length);
+        this.currentUser = this.allDrivers[randomIndex];
+      }
+    });
+
+
     
-    this.driverService.connectToMatchedSocket(this.currentUser.id); // replace 123 with the driverId you want to filter
+    
+    this.driverService.connectToMatchedSocket(this.currentUser.id); 
     this.driverService.getDataMatchedSocketData()
       .subscribe(data => {
         this.matchedRequests = data;
       });
   }
 
-  async acceptRide(selectedRequest: ICustomer) {
+  async acceptRide(selectedRequestInput: ICustomer) {
   
       const payload : ICustomer = {
-        id: this.selectedRequest.id,
-        name: this.selectedRequest.name,
-        locationX: this.selectedRequest.locationX,
-        locationY: this.selectedRequest.locationY,
-        rideId: this.selectedRequest.rideId,
-        driverId: this.selectedRequest.driverId,
+        id: selectedRequestInput.id,
+        name: selectedRequestInput.name,
+        locationX: selectedRequestInput.locationX,
+        locationY: selectedRequestInput.locationY,
+        rideId: selectedRequestInput.rideId,
+        driverId: selectedRequestInput.driverId,
       };
+
+      console.log(`Selected ride is: ${JSON.stringify(payload)}`);
 
       
 
@@ -90,6 +102,17 @@ export class DriverComponent implements OnInit {
     
   }
 
+  switchUser(valu: MatSelectChange) {
+
+    this.currentUser = valu.value;
+
+    setTimeout(() => {
+      valu.source.value = this.selectPlaceholder;
+    }, 0);
+    
+    
+  }
+
   submitLocation(): void {
     this.locationPayload = {
       locationX: this.locationX,
@@ -97,11 +120,9 @@ export class DriverComponent implements OnInit {
       driverId: this.currentUser.id,
       customerId: null,
     };
-    const webSocket = new WebSocket(this.locationUrl);
-    webSocket.onopen = (event) => {
-      webSocket.send(JSON.stringify(this.locationPayload));
-      webSocket.close();
-    };
+
+    this.rxStompService.publish({ destination: '/app/location', body: JSON.stringify(this.locationPayload) });
+
   }
 
   contactCustomer(val: any) {
