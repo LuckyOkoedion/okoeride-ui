@@ -37,14 +37,15 @@ export class DatafetchService {
     this.driverId = driverId;
  
     this.rxStompService.watch
-      ({ destination: "/topic/matched" })
+      ({ destination: "/matched" })
       .subscribe((message: IMessage) => {
       console.log(`Data from ws: ${message.body}`);
 
       const payload: ICustomer = JSON.parse(message.body);
 
       if (payload.driverId === this.driverId) {
-        const newData = [...this.matchedData$.getValue(), message];
+        const newData = [...this.matchedData$.getValue(), payload];
+        console.log(`New matched is: ${JSON.stringify(newData)}`);
         this.matchedData$.next(newData);
       }
         

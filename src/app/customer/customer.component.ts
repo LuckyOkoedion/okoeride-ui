@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Location } from '@angular/common';
@@ -22,12 +22,7 @@ import { MatSelectChange } from '@angular/material/select';
 })
 export class CustomerComponent implements OnInit {
   title = "The Ride"
-  currentUser: ICustomer = {
-    id: 2, // hard-coded for now, but can be passed in from auth service
-    name: 'Franca Okpe',
-    locationX: 10, 
-    locationY: 20
-  };
+  currentUser: ICustomer;
 
   selectPlaceholder = "Switch User";
 
@@ -58,13 +53,14 @@ export class CustomerComponent implements OnInit {
     private route: ActivatedRoute,
     private location: Location,
     private titleService: Title,
-    private rxStompService: RxStompService
+    private rxStompService: RxStompService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit() {
 
 
-    this.titleService.setTitle('TheRide - Customer: ' + this.currentUser.name.split(' ')[0]);
+   
     const userId = +this.route.snapshot.paramMap.get('id');
    // this.currentUser = await this.dataFetchService.getCustomer(userId);
 
@@ -75,6 +71,7 @@ export class CustomerComponent implements OnInit {
        this.allCustomers = valu;
        const randomIndex = Math.floor(Math.random() * this.allCustomers.length);
        this.currentUser = this.allCustomers[randomIndex];
+       this.titleService.setTitle('TheRide - Customer: ' + this.currentUser?.name.split(' ')[0]);
      }
    });
 
@@ -97,6 +94,8 @@ export class CustomerComponent implements OnInit {
   switchUser(valu: MatSelectChange) {
 
     this.currentUser = valu.value;
+    this.titleService.setTitle('TheRide - Driver: ' + this.currentUser.name.split(' ')[0]);
+    this.cdr.detectChanges();
 
     setTimeout(() => {
       valu.source.value = this.selectPlaceholder;

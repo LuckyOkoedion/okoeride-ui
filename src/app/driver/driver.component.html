@@ -24,7 +24,7 @@
       </form>
     </div>
     <div class="col-md-8">
-      <div *ngIf="matchedRequests.length > 0">
+      <div *ngIf="matchedRequests?.length > 0">
         <h4 style="color: #070A52; font-weight: bold; font-size: 16px; text-decoration: underline;">Matched Requests</h4>
         <div *ngFor="let request of matchedRequests">
           <div class="card mb-2" (click)="acceptRide(request)" style="cursor: pointer;">
@@ -32,7 +32,7 @@
               <div class="media">
                 <i class="person-circle"></i>
                 <div class="media-body">
-                  <h5 class="mt-0">{{request.name}}</h5>
+                  <h3 class="mt-0">{{request.name}}</h3>
                   <p>Pick Up Location: {{request.locationX}}, {{request.locationY}}</p>
                 </div>
               </div>
@@ -40,7 +40,7 @@
           </div>
         </div>
       </div>
-      <div *ngIf="!selectedRequest && matchedRequests.length == 0" style="padding-left: 30px; margin-top: 30px; font-weight: bold; font-size: 16px;"> No Matched Customers At the Moment</div>
+      <div *ngIf="!selectedRequest && matchedRequests?.length == 0" style="padding-left: 30px; margin-top: 30px; font-weight: bold; font-size: 16px;"> No Matched Customers At the Moment</div>
       <div *ngIf="selectedRequest">
         <h4 style="color: #070A52; font-weight: bold; font-size: 16px; text-decoration: underline;">Accepted Ride</h4>
         <div class="card mb-2">

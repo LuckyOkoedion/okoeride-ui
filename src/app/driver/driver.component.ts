@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { WebSocketSubject } from 'rxjs/webSocket';
 import { HttpClient } from '@angular/common/http';
 import { ICustomer } from '../customer-interface';
@@ -7,6 +7,8 @@ import { DatafetchService } from '../datafetch.service';
 import { RxStompService } from '../rx-stomp.service';
 import { IDriver } from './driver-interface';
 import { MatSelectChange } from '@angular/material/select';
+import { Subscription, interval, switchMap, tap } from 'rxjs';
+import { IMessage } from '@stomp/rx-stomp';
 
 
 @Component({
@@ -14,45 +16,46 @@ import { MatSelectChange } from '@angular/material/select';
   templateUrl: './driver.component.html',
   styleUrls: ['./driver.component.css']
 })
-export class DriverComponent implements OnInit {
+export class DriverComponent implements OnInit, OnDestroy {
 
   title = "The Ride";
   selectPlaceholder = "Switch User";
   allDrivers: IDriver[];
 
+  private subscription: Subscription;
 
-  currentUser = {
-    id: 1, // hard-coded for now, but can be passed in from auth service
-    name: 'John Doe',
-  };
+  private matchedSubscription: Subscription;
+
+
+  currentUser;
   locationX = Math.floor(Math.random() * 100); // pre-populated with random two digit numbers
   locationY = Math.floor(Math.random() * 100); // pre-populated with random two digit numbers
-  locationPayload = {
-    locationX: this.locationX,
-    locationY: this.locationY,
-    driverId: this.currentUser.id,
-    customerId: null,
-  };
-  matchedRequests: ICustomer[] = [
-    {name: "Harry Smith", locationY: 13, locationX: 12, id: 3, driverId: 1, rideId: 3},
-    {name: "John Ukpe", locationY: 25, locationX: 19, id: 11, driverId: 8, rideId: 3},
-    {name: "Chukwu Naple", locationY: 18, locationX: 22, id: 11, driverId: 1, rideId: 3},
-    {name: "Harry Smith", locationY: 23, locationX: 19, id: 67, driverId: 12, rideId: 3},
-    {name: "Harry Smith", locationY: 66, locationX: 45, id: 8, driverId: 1, rideId: 3}
-  ];
-  selectedRide: any = null;
+
+  matchedRequests: ICustomer[] = [];
+  selectedRide;
 
   x;
-  selectedRequest : ICustomer = {name: "Harry Smith", locationY: 13, locationX: 12, id: 3};
+  selectedRequest;
 
   constructor(private driverService: DatafetchService, 
     private titleService: Title, private rxStompService: RxStompService
-    ) { }
+    ) { 
+
+      this.subscription = interval(1000).subscribe(() => {
+        this.locationX = Math.floor(Math.random() * 90) + 10;
+        this.locationY = Math.floor(Math.random() * 90) + 10;
+        this.submitLocation();
+      });
+
+
+    }
+  
 
   ngOnInit(): void {
 
-    this.selectedRequest = null;
-    this.titleService.setTitle('TheRide - Driver: ' + this.currentUser.name.split(' ')[0]);
+
+
+
 
     this.driverService.fetchDrivers$();
     this.driverService.getDrivers()
@@ -60,18 +63,31 @@ export class DriverComponent implements OnInit {
       next: (valu) => {
         this.allDrivers = valu;
         const randomIndex = Math.floor(Math.random() * this.allDrivers.length);
-        this.currentUser = this.allDrivers[randomIndex];
+        const theVal = this.allDrivers[randomIndex];
+        this.currentUser = theVal;
+        console.log(`CurrentUser is: ${ JSON.stringify(theVal)}`);
+        this.titleService.setTitle('TheRide - Driver: ' + this.currentUser?.name.split(' ')[0]);
+
+        this.matchedRequests = [];
+        this.matchedRequests.length = 0;
+        this.driverService.connectToMatchedSocket(theVal?.id); 
+     this.matchedSubscription =   this.driverService.getDataMatchedSocketData()
+          .subscribe(data => {
+            console.log("Value from matched is: " + JSON.stringify(data));
+            this.matchedRequests = [];
+            this.matchedRequests.length = 0;
+            this.matchedRequests = [...data];
+          });
       }
     });
 
 
+
+
+
     
     
-    this.driverService.connectToMatchedSocket(this.currentUser.id); 
-    this.driverService.getDataMatchedSocketData()
-      .subscribe(data => {
-        this.matchedRequests = data;
-      });
+ 
   }
 
   async acceptRide(selectedRequestInput: ICustomer) {
@@ -105,6 +121,20 @@ export class DriverComponent implements OnInit {
   switchUser(valu: MatSelectChange) {
 
     this.currentUser = valu.value;
+    this.titleService.setTitle('TheRide - Driver: ' + this.currentUser.name.split(' ')[0]);
+
+    this.matchedSubscription.unsubscribe();
+
+    this.matchedRequests = [];
+    this.matchedRequests.length = 0;
+    this.driverService.connectToMatchedSocket(this.currentUser.id); 
+   this.matchedSubscription = this.driverService.getDataMatchedSocketData()
+      .subscribe(data => {
+        console.log("Value from matched is: " + JSON.stringify(data));
+        this.matchedRequests = [];
+        this.matchedRequests.length = 0;
+        this.matchedRequests = [...data];
+      });
 
     setTimeout(() => {
       valu.source.value = this.selectPlaceholder;
@@ -114,20 +144,25 @@ export class DriverComponent implements OnInit {
   }
 
   submitLocation(): void {
-    this.locationPayload = {
+    const locationPayload = {
       locationX: this.locationX,
       locationY: this.locationY,
       driverId: this.currentUser.id,
       customerId: null,
     };
 
-    this.rxStompService.publish({ destination: '/app/location', body: JSON.stringify(this.locationPayload) });
+    this.rxStompService.publish({ destination: '/app/location', body: JSON.stringify(locationPayload) });
 
   }
 
   contactCustomer(val: any) {
     console.log("Customer contacted")
 
+  }
+
+
+  ngOnDestroy(): void {
+    this.subscription.unsubscribe();
   }
 
 
