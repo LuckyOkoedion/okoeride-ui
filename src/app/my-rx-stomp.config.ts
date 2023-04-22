@@ -1,7 +1,7 @@
 import { RxStompConfig } from "@stomp/rx-stomp";
 
 export const myRxStompConfig: RxStompConfig = {
-    brokerURL: 'ws://127.0.0.1:8080/ws',
+    brokerURL: 'ws://kubernetes.docker.internal:30080/ws',
 
     connectHeaders: {
         login: 'guest',

@@ -19,7 +19,7 @@ export class DatafetchService {
   private driverId: number;
   
   private currentUser: any;
-  private apiUrl = 'http://localhost:8080';
+  private apiUrl = 'http://kubernetes.docker.internal:30080';
 
   customers: ICustomer[];
 
@@ -218,7 +218,7 @@ export class DatafetchService {
 
     console.log(theName);
 
-    const url = 'http://localhost:8080/admin/onboard-driver';
+    const url = 'http://kubernetes.docker.internal:30080/admin/onboard-driver';
     const data = { name: theName };
 
     return this.http.post(url, data);
@@ -227,7 +227,7 @@ export class DatafetchService {
 
 
   fetchDrivers$() {
-    this.http.get<IDriver[]>("http://localhost:8080/driver")
+    this.http.get<IDriver[]>("http://kubernetes.docker.internal:30080/driver")
     .subscribe({
       next: (valu) => {
         console.log("Data from get all drivers: " + JSON.stringify(valu));
@@ -239,7 +239,7 @@ export class DatafetchService {
   }
 
   fetchCustomers$() {
-    this.http.get<ICustomer[]>("http://localhost:8080/customer")
+    this.http.get<ICustomer[]>("http://kubernetes.docker.internal:30080/customer")
     .subscribe({
       next: (valu) => {
         console.log("Data from get all customers: " + JSON.stringify(valu));
